@@ -1,0 +1,163 @@
+import { useState } from "react";
+import TopicPage from "../components/TopicPage";
+import { Section, Hi, DemoCard, BeginnerNote, ProLabel } from "../components/Bits";
+import Callout from "../components/Callout";
+import CodeBlock from "../components/CodeBlock";
+import Quiz from "../components/Quiz";
+
+const wiggleStyle = `
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-8deg) scale(1.05); }
+  75% { transform: rotate(8deg) scale(1.05); }
+}
+.wiggle-demo { animation: wiggle 0.9s ease-in-out infinite; }
+
+@keyframes bounce-demo {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-18px); }
+}
+.bounce-demo { animation: bounce-demo 0.7s cubic-bezier(0.5, 0, 1, 0.5) infinite alternate; }
+
+@keyframes pulse-demo {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.6; }
+}
+.pulse-demo { animation: pulse-demo 1.1s ease-in-out infinite; }
+`;
+
+export default function Animations() {
+  const [transform, setTransform] = useState("translate");
+  const [playing, setPlaying] = useState(true);
+
+  const transformMap = {
+    translate: "translateX(40px)",
+    rotate: "rotate(45deg)",
+    scale: "scale(1.4)",
+    skew: "skewX(20deg)",
+  };
+
+  return (
+    <TopicPage
+      id="animations"
+      category="Visual & Motion"
+      tag="Motion"
+      title="Transforms & Keyframe Animations"
+      summary="transform repositions an element without touching layout. @keyframes choreographs multiple states over time, looping and easing between each one automatically."
+    >
+      <style>{wiggleStyle}</style>
+
+      <Section id="how" kicker="How it works" title="A separate coordinate space, and a state machine">
+        <BeginnerNote>
+          <b>transform</b> moves, spins, or resizes an element visually — like sliding a sticker around on glass,
+          without changing anything underneath it. <b>@keyframes</b> is a mini script for transforms: you describe
+          what the element should look like at 0%, 50%, 100% of the animation, and the browser smoothly fills in
+          everything between those checkpoints for you.
+        </BeginnerNote>
+        <ProLabel />
+        <p>
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">transform</code> functions —{" "}
+          <Hi tone="indigo">translate, rotate, scale, skew</Hi> — operate in their own coordinate space applied{" "}
+          <em>after</em> layout is computed. That's why transforming an element never reflows its siblings: as far
+          as layout is concerned, the element never moved — only its rendered pixels did.
+        </p>
+        <p>
+          Multiple functions combine by <Hi tone="sky">matrix multiplication</Hi>, applied right to left:{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">transform: translateX(50px) rotate(45deg)</code>{" "}
+          rotates first, then translates along the <em>new</em> rotated axis — which is rarely what people expect,
+          and is why order matters.
+        </p>
+        <Callout type="spec" title="@keyframes is a percentage-based timeline">
+          Each percentage in a keyframe block is a checkpoint of computed style. The browser interpolates between
+          consecutive checkpoints exactly like a transition, but chained across as many steps as you define.{" "}
+          <code>animation-iteration-count: infinite</code> loops it; <code>animation-direction: alternate</code>{" "}
+          reverses every other loop instead of snapping back to 0%.
+        </Callout>
+        <p>
+          <Hi tone="amber">animation-fill-mode: forwards</Hi> is the detail most people miss — without it, the
+          element snaps back to its pre-animation style the instant the animation ends, even though it visually
+          looked "finished" a moment ago.
+        </p>
+      </Section>
+
+      <Section id="demo" kicker="Watch it happen" title="Live demo — transform functions + a running keyframe loop">
+        <DemoCard label="Transform functions" caption="Each button sets a single transform function on the box. transform-origin defaults to the element's center.">
+          <div className="w-full space-y-5">
+            <div className="flex flex-col items-center gap-3">
+              <div className="grid h-24 w-full place-items-center">
+                <div
+                  className="h-14 w-14 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-500 shadow-lg transition-transform duration-500 ease-out"
+                  style={{ transform: transformMap[transform] }}
+                />
+              </div>
+              <div className="flex flex-wrap justify-center gap-2 text-xs">
+                {Object.keys(transformMap).map((t) => (
+                  <button key={t} onClick={() => setTransform(t)} className={`rounded-full px-3 py-1 font-bold transition ${transform === t ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-300"}`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+              <div className="flex items-center gap-6">
+                <div className={`h-14 w-14 rounded-xl bg-gradient-to-br from-rose-400 to-amber-400 shadow-lg ${playing ? "wiggle-demo" : ""}`} />
+                <div className={`h-12 w-12 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 shadow-lg ${playing ? "bounce-demo" : ""}`} />
+                <div className={`h-12 w-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg ${playing ? "pulse-demo" : ""}`} />
+              </div>
+              <button onClick={() => setPlaying((p) => !p)} className="rounded-full bg-sky-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-sky-500">
+                {playing ? "Pause @keyframes" : "Play @keyframes"}
+              </button>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">wiggle · bounce · pulse — three independent @keyframes rules</p>
+            </div>
+          </div>
+        </DemoCard>
+      </Section>
+
+      <Section id="code" kicker="Reference" title="The wiggle animation, in full">
+        <CodeBlock
+          title="animations.css"
+          code={`@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25%       { transform: rotate(-8deg) scale(1.05); }
+  75%       { transform: rotate(8deg) scale(1.05); }
+}
+
+.icon {
+  animation: wiggle 0.9s ease-in-out infinite;
+  animation-fill-mode: forwards; /* keep the last frame's style once stopped */
+}`}
+        />
+      </Section>
+
+      <Section id="quiz" kicker="Check yourself" title="Practice questions">
+        <Quiz
+          questions={[
+            {
+              prompt: "Why doesn't transform: translateX(100px) cause sibling elements to reflow?",
+              options: [
+                "Because translate is instant",
+                "Because transforms are applied after layout, in their own compositing step, without changing the box's layout position",
+                "Because it's a bug in most browsers",
+                "It does cause reflow",
+              ],
+              answer: 1,
+              explain: "Layout is computed first; transforms then reposition the painted pixels visually. Siblings never see a layout change, so they never reflow.",
+            },
+            {
+              prompt: "transform: translateX(50px) rotate(45deg) — what order do the functions apply in?",
+              options: ["Left to right: translate, then rotate", "Right to left: rotate first, then translate along the rotated axis", "Simultaneously, order doesn't matter", "CSS picks whichever is cheaper"],
+              answer: 1,
+              explain: "Transform functions compose via matrix multiplication applied right-to-left, so the rightmost function is effectively applied to the element first.",
+            },
+            {
+              prompt: "An animation ends but the element instantly snaps back to its original style. What's missing?",
+              options: ["animation-delay", "animation-fill-mode: forwards", "animation-timing-function", "@keyframes 100%"],
+              answer: 1,
+              explain: "Without fill-mode: forwards, the browser discards the animated styles once the animation completes and reverts to the element's pre-animation computed style.",
+            },
+          ]}
+        />
+      </Section>
+    </TopicPage>
+  );
+}
