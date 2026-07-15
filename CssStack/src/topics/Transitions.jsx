@@ -8,6 +8,7 @@ import Quiz from "../components/Quiz";
 export default function Transitions() {
   const [on, setOn] = useState(false);
   const [easing, setEasing] = useState("ease");
+  const [staggered, setStaggered] = useState(false);
 
   return (
     <TopicPage
@@ -71,6 +72,46 @@ export default function Transitions() {
         </DemoCard>
       </Section>
 
+      <Section id="delay" kicker="Sequencing" title="transition-delay — staggering a group">
+        <BeginnerNote>
+          <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">transition-delay</code> just tells
+          the browser "wait this long before starting the glide." If three boxes all get the same transition but
+          different delays (0ms, 150ms, 300ms), they start one after another instead of all at once — the classic
+          trick behind staggered card/list entrance animations.
+        </BeginnerNote>
+        <ProLabel />
+        <p>
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">transition-delay</code> only
+          postpones the <em>start</em> of the interpolation — the duration and easing still apply in full once it
+          begins. Giving a list of siblings incrementing delays (often via{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">nth-child</code> selectors or inline styles
+          driven by index) is a common, CSS-only way to fake a choreographed sequence without JavaScript timers.
+        </p>
+        <DemoCard label="Click to trigger" caption="Same 60px lift and 400ms duration on all three boxes — only transition-delay differs (0ms, 150ms, 300ms).">
+          <div className="w-full space-y-4">
+            <div className="flex justify-center">
+              <button onClick={() => setStaggered((s) => !s)} className="rounded-full bg-sky-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-sky-500">
+                {staggered ? "Reset" : "Run staggered"}
+              </button>
+            </div>
+            <div className="flex items-end justify-center gap-6 pb-2">
+              {[0, 150, 300].map((delay) => (
+                <div key={delay} className="flex flex-col items-center gap-2">
+                  <div
+                    className="h-12 w-12 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-500 shadow-lg"
+                    style={{
+                      transform: `translateY(${staggered ? -24 : 0}px)`,
+                      transition: `transform 400ms ease-out ${delay}ms`,
+                    }}
+                  />
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">delay: {delay}ms</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DemoCard>
+      </Section>
+
       <Section id="code" kicker="Reference" title="Transition shorthand">
         <CodeBlock
           title="transitions.css"
@@ -122,6 +163,17 @@ export default function Transitions() {
               ],
               answer: 1,
               explain: "'all' is shorthand for every animatable property, each transitioned independently with the same duration/easing — convenient, but can trigger unwanted transitions on properties you didn't intend to animate.",
+            },
+            {
+              prompt: "Three sibling cards share the same transition but have transition-delay: 0ms, 150ms, and 300ms. What happens when they all animate at once?",
+              options: [
+                "They all animate simultaneously, delay is ignored",
+                "Each waits its own delay before starting, so they animate one after another — a staggered effect",
+                "Only the first one animates",
+                "transition-delay reverses the animation direction",
+              ],
+              answer: 1,
+              explain: "transition-delay only postpones the start of the interpolation for that element; giving siblings incrementing delays makes them kick off in sequence, producing a staggered entrance.",
             },
           ]}
         />

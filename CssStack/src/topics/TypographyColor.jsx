@@ -53,6 +53,43 @@ export default function TypographyColor() {
         </p>
       </Section>
 
+      <Section id="text-utilities" kicker="Everyday properties" title="Weight, case, spacing, decoration & truncation">
+        <BeginnerNote>
+          Beyond size and color, five small properties do most of the everyday text styling work:{" "}
+          <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">font-weight</code> controls boldness,{" "}
+          <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">text-transform</code> changes letter
+          casing without touching the actual text, <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">letter-spacing</code>{" "}
+          pushes characters apart, <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">text-decoration</code>{" "}
+          draws lines under/through text, and <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">text-overflow: ellipsis</code>{" "}
+          swaps overflowing text for "…" — but only if you also tell the browser the text isn't allowed to wrap or
+          spill out.
+        </BeginnerNote>
+        <ProLabel />
+        <p>
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">font-weight</code> is a numeric axis
+          (100–900) mapped to font files that actually ship that weight — requesting <code>800</code> on a font
+          without a matching static weight makes the browser <Hi tone="amber">synthesize</Hi> a fake bold by
+          stretching outlines, which looks noticeably worse than a real bold cut.{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">text-transform</code> is purely visual —
+          screen readers and copy/paste still see the original casing in the DOM, unlike actually uppercasing the
+          source text.
+        </p>
+        <p>
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">text-overflow: ellipsis</code> only
+          swaps in the "…" glyph; it does nothing by itself. It needs{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">white-space: nowrap</code> (so the
+          line can't wrap to a second row) and <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">overflow: hidden</code> (so
+          the overflowing text is actually clipped) working together — three properties, one visual result.
+        </p>
+        <TextUtilityPlayground />
+        <EllipsisDemo />
+        <Callout type="pitfall" title="Ellipsis needs all three properties, every time">
+          <code>text-overflow: ellipsis</code> alone changes nothing. Without <code>overflow: hidden</code> there's
+          nothing being clipped for it to represent, and without <code>white-space: nowrap</code> the text just
+          wraps onto a new line instead of overflowing horizontally at all.
+        </Callout>
+      </Section>
+
       <Section id="demo" kicker="Watch it happen" title="Live demo — type scale & alpha compositing">
         <DemoCard label="Typography + color" caption="Drag to see em-based sizing and alpha compositing recompute live against the dotted background.">
           <div className="w-full space-y-5">
@@ -108,9 +145,134 @@ export default function TypographyColor() {
               answer: 0,
               explain: "oklch models lightness the way human vision perceives it and isn't capped at the sRGB gamut, so equal steps look equal and colors can be more saturated on capable displays.",
             },
+            {
+              prompt: "Why does text-overflow: ellipsis sometimes appear to do nothing?",
+              options: [
+                "It requires white-space: nowrap and overflow: hidden on the same element to have any visible effect",
+                "It only works on <img> elements",
+                "It's not supported in any browser",
+                "It needs a fixed font-size",
+              ],
+              answer: 0,
+              explain: "text-overflow only decides what to render in place of clipped content — it needs overflow: hidden to actually clip something, and white-space: nowrap so the line doesn't wrap instead of overflowing.",
+            },
+            {
+              prompt: "What's the key difference between text-transform: uppercase and writing text in all caps directly in the HTML?",
+              options: [
+                "There's no difference at all",
+                "text-transform is purely visual — the underlying DOM text (and what screen readers/copy-paste see) keeps its original casing",
+                "text-transform changes the actual characters stored in the DOM",
+                "uppercase in HTML renders faster",
+              ],
+              answer: 1,
+              explain: "text-transform only affects the rendered glyphs. Selecting or copying the text, or querying it via JS/assistive tech, returns the original source casing.",
+            },
           ]}
         />
       </Section>
     </TopicPage>
+  );
+}
+
+function PillButton({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full px-3 py-1 font-semibold transition ${active ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-300"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function TextUtilityPlayground() {
+  const [weight, setWeight] = useState(400);
+  const [transform, setTransform] = useState("none");
+  const [spacing, setSpacing] = useState("normal");
+  const [decoration, setDecoration] = useState("none");
+
+  return (
+    <DemoCard
+      label="Text utilities"
+      caption={`font-weight: ${weight} · text-transform: ${transform} · letter-spacing: ${spacing} · text-decoration: ${decoration}`}
+    >
+      <div className="w-full space-y-4">
+        <p
+          className="rounded-lg bg-white px-4 py-6 text-center text-lg text-slate-800 shadow-sm transition-all duration-300 dark:bg-slate-800/60 dark:text-slate-100"
+          style={{
+            fontWeight: weight,
+            textTransform: transform,
+            letterSpacing: spacing === "wide" ? "0.15em" : "normal",
+            textDecorationLine: decoration,
+          }}
+        >
+          The quick brown fox jumps
+        </p>
+        <div className="flex flex-wrap justify-center gap-2 text-xs">
+          {[400, 600, 800].map((w) => (
+            <PillButton key={w} active={weight === w} onClick={() => setWeight(w)}>
+              weight {w}
+            </PillButton>
+          ))}
+        </div>
+        <div className="flex flex-wrap justify-center gap-2 text-xs">
+          {["none", "uppercase", "capitalize"].map((t) => (
+            <PillButton key={t} active={transform === t} onClick={() => setTransform(t)}>
+              {t}
+            </PillButton>
+          ))}
+        </div>
+        <div className="flex flex-wrap justify-center gap-2 text-xs">
+          {["normal", "wide"].map((s) => (
+            <PillButton key={s} active={spacing === s} onClick={() => setSpacing(s)}>
+              spacing: {s}
+            </PillButton>
+          ))}
+        </div>
+        <div className="flex flex-wrap justify-center gap-2 text-xs">
+          {["none", "underline", "line-through"].map((d) => (
+            <PillButton key={d} active={decoration === d} onClick={() => setDecoration(d)}>
+              {d}
+            </PillButton>
+          ))}
+        </div>
+      </div>
+    </DemoCard>
+  );
+}
+
+function EllipsisDemo() {
+  const [truncate, setTruncate] = useState(true);
+
+  return (
+    <DemoCard
+      label="text-overflow: ellipsis"
+      caption={
+        truncate
+          ? "white-space: nowrap + overflow: hidden + text-overflow: ellipsis are all applied together."
+          : "None of the three properties are applied — the text wraps normally instead."
+      }
+    >
+      <div className="w-full space-y-3">
+        <div className="flex justify-center">
+          <button
+            onClick={() => setTruncate((t) => !t)}
+            className={`rounded-full px-3 py-1 text-xs font-bold transition ${truncate ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-300"}`}
+          >
+            {truncate ? "Truncation: ON" : "Truncation: OFF"}
+          </button>
+        </div>
+        <div
+          className="mx-auto w-64 rounded-lg border-2 border-dashed border-slate-300 bg-white px-3 py-3 text-sm text-slate-700 transition-all duration-300 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+          style={
+            truncate
+              ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }
+              : {}
+          }
+        >
+          This is a much longer sentence than the fixed-width box can comfortably display.
+        </div>
+      </div>
+    </DemoCard>
   );
 }

@@ -7,6 +7,7 @@ import Quiz from "../components/Quiz";
 
 export default function Responsive() {
   const [width, setWidth] = useState(500);
+  const [containerWidth, setContainerWidth] = useState(500);
 
   return (
     <TopicPage
@@ -68,7 +69,81 @@ export default function Responsive() {
         </DemoCard>
       </Section>
 
-      <Section id="code" kicker="Reference" title="Mobile-first breakpoints + fluid type">
+      <Section id="container-queries" kicker="The modern alternative" title="Container queries — responding to a parent, not the viewport">
+        <BeginnerNote>
+          A media query asks "how wide is the whole browser window?" A <b>container query</b> asks a narrower,
+          more useful question: "how wide is <em>my direct parent</em>, wherever it happens to be placed on the
+          page?" That difference matters the moment you build a reusable card component — the same card might sit
+          in a wide main column on one page and a skinny sidebar on another. A media query can't tell the
+          difference; a container query can, because it measures the box the component actually lives in, not the
+          screen.
+        </BeginnerNote>
+        <ProLabel />
+        <p>
+          Container queries need two pieces set up before they'll do anything.{" "}
+          <Hi tone="indigo">container-type: inline-size</Hi> on an ancestor opts that element into being a "query
+          container" — it tells the engine to track that element's inline-axis (usually horizontal) size and make
+          it queryable. Optionally, <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">container-name: sidebar</code>{" "}
+          gives that container a name, so a query can target a specific named ancestor rather than "whichever
+          container happens to be nearest."
+        </p>
+        <p>
+          Once a container exists, descendants query it with{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">@container (min-width: 400px) {"{ }"}</code>{" "}
+          — same syntax shape as <code>@media</code>, but the condition is evaluated against the nearest ancestor
+          query container instead of the viewport. This is what makes truly reusable, layout-agnostic components
+          possible: the component itself decides how to reflow based on the space it's actually given.
+        </p>
+        <Callout type="pitfall" title="A container query needs an ancestor opted in — and can't query itself">
+          <code>@container</code> rules silently do nothing unless <em>some ancestor</em> has{" "}
+          <code>container-type</code> set — there's no implicit container the way the viewport is implicitly
+          available to <code>@media</code>. And an element can never container-query its own size: sizing yourself
+          based on your own size is circular, so the query always targets an ancestor, never the element carrying
+          the rule.
+        </Callout>
+        <DemoCard label="Simulated @container" caption={`Dragging this slider changes a "container" box's width — a real @container query reacts to exactly this (the parent's size), never the browser viewport. Contrast with the demo above: that one simulates @media (viewport width); this one simulates @container (a specific ancestor's width) — the card grid below can react completely differently depending on where it's dropped on the page, which is the whole point.`}>
+          <div className="w-full space-y-3">
+            <input type="range" min="220" max="600" value={containerWidth} onChange={(e) => setContainerWidth(+e.target.value)} className="w-full accent-sky-500" />
+            <div className="mx-auto rounded-lg border-2 border-dashed border-sky-300 bg-white dark:border-sky-700 dark:bg-slate-800/60 p-3 transition-all duration-150" style={{ width: containerWidth }}>
+              <p className="mb-2 text-center text-[10px] font-bold uppercase tracking-wide text-sky-500">container-type: inline-size</p>
+              <div className={`grid gap-2 ${containerWidth < 380 ? "grid-cols-1" : containerWidth < 500 ? "grid-cols-2" : "grid-cols-3"}`}>
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="grid h-12 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-sky-500 text-xs font-bold text-white transition-all duration-300">
+                    card {n}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-center text-[11px] font-semibold text-slate-400">container width: {containerWidth}px → {containerWidth < 380 ? "@container (max-width: 380px)" : containerWidth < 500 ? "@container (min-width: 380px)" : "@container (min-width: 500px)"}</p>
+            </div>
+          </div>
+        </DemoCard>
+      </Section>
+
+      <Section id="environment-features" kicker="Beyond size" title="Environment media features">
+        <p>
+          Not every media feature is about size. <Hi tone="emerald">prefers-color-scheme</Hi> and{" "}
+          <Hi tone="emerald">prefers-reduced-motion</Hi> are "environment" features — they report something about
+          the user's OS-level settings or preferences, not the dimensions of anything. They can't be simulated with
+          a draggable slider the way width can, because there's no "size" to drag; the browser reads them straight
+          from the operating system.
+        </p>
+        <Callout type="tip" title="Two settings worth always respecting">
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              <code>@media (prefers-color-scheme: dark)</code> — matches when the user's OS/browser is set to a
+              dark theme, letting a site ship a dark palette without any JS or a manual toggle.
+            </li>
+            <li>
+              <code>@media (prefers-reduced-motion: reduce)</code> — matches when the user has asked their OS to
+              minimize animation (often for vestibular disorders or motion sensitivity). Wrapping transitions and
+              keyframe animations in this query so they're disabled or shortened is considered an accessibility
+              baseline, not an optional nicety.
+            </li>
+          </ul>
+        </Callout>
+      </Section>
+
+      <Section id="code" kicker="Reference" title="Mobile-first breakpoints + fluid type + container queries">
         <CodeBlock
           title="responsive.css"
           code={`.grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
@@ -82,6 +157,23 @@ export default function Responsive() {
 
 h1 {
   font-size: clamp(1.75rem, 4vw + 1rem, 3.5rem); /* fluid, no jump */
+}
+
+/* container query: reacts to the parent's width, not the viewport */
+.sidebar {
+  container-type: inline-size;
+  container-name: sidebar;
+}
+
+@container sidebar (min-width: 400px) {
+  .card { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (prefers-color-scheme: dark) {
+  body { background: #0f172a; color: #e2e8f0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }`}
         />
       </Section>
@@ -111,6 +203,28 @@ h1 {
               options: ["The viewport width", "The nearest ancestor with a defined size (its containing block)", "The root element always", "The element's own font-size"],
               answer: 1,
               explain: "Percentage units resolve against the containing block, not the viewport — vw/vh are the units that reference the viewport directly.",
+            },
+            {
+              prompt: "How does a container query (@container) fundamentally differ from a media query (@media (width: ...))?",
+              options: [
+                "They're two names for the same feature",
+                "@container measures the size of a specific ancestor container, while @media measures the viewport — so the same component can respond differently depending on where it's placed",
+                "@container only works on mobile devices",
+                "@container replaces flexbox entirely",
+              ],
+              answer: 1,
+              explain: "A container query needs an ancestor with container-type set and reacts to that ancestor's size, not the browser window — making components reflow based on the space they're actually given, wherever they're dropped.",
+            },
+            {
+              prompt: "What kind of condition do prefers-color-scheme and prefers-reduced-motion check?",
+              options: [
+                "The current viewport width",
+                "The element's own computed size",
+                "User/OS-level environment preferences, not a size at all",
+                "The number of grid columns available",
+              ],
+              answer: 2,
+              explain: "These are 'environment' media features — they report OS-level user preferences (dark mode, reduced motion) rather than measuring any dimension, unlike width/height-based media and container queries.",
             },
           ]}
         />

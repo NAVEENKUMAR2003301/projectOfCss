@@ -77,6 +77,37 @@ export default function Cascade() {
         </DemoCard>
       </Section>
 
+      <Section id="keywords" kicker="Explicit control" title="inherit, initial, and unset — forcing a value">
+        <BeginnerNote>
+          Normally inheritance just happens quietly in the background. But sometimes you want to <em>force</em> the
+          issue: "no really, copy whatever the parent has" or "forget everything, go back to the browser default."{" "}
+          <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">inherit</code>,{" "}
+          <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">initial</code>, and{" "}
+          <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">unset</code> are the three keywords
+          that let you say that explicitly, instead of hoping inheritance does what you want.
+        </BeginnerNote>
+        <p>
+          <Hi tone="indigo">inherit</Hi> forces the element to take the parent's <em>computed</em> value for that
+          property — even on properties that don't naturally inherit, like <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">background-color</code> or{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">border</code>.{" "}
+          <Hi tone="amber">initial</Hi> resets the property to its spec-defined default value, completely ignoring
+          the parent — for <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">color</code> that's typically black; for{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">background-color</code> it's transparent.{" "}
+          <Hi tone="emerald">unset</Hi> is the chameleon of the three: it acts like{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">inherit</code> on properties that naturally inherit
+          (like <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">color</code>), and like{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">initial</code> on properties that don't (like{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">background-color</code>).
+        </p>
+        <KeywordsPlayground />
+        <Callout type="pitfall" title="unset's behavior depends on the property">
+          There's no single thing <code>unset</code> "does" — you have to know whether the property inherits by
+          default. Flip the property switch above between <code>color</code> (inherits) and{" "}
+          <code>background-color</code> (doesn't) and watch <code>unset</code> produce a different result each time,
+          even though it's the exact same keyword.
+        </Callout>
+      </Section>
+
       <Section id="code" kicker="Reference" title="Inherited vs. non-inherited">
         <CodeBlock
           title="cascade.css"
@@ -89,8 +120,12 @@ margin, padding, border, width, height,
 background, position, display
 
 /* Force either direction */
-.child { color: inherit; }   /* pull parent's computed value */
-.child { all: unset; }        /* reset inherited + own props */`}
+.child { color: inherit; }    /* pull parent's computed value, even on
+                                  non-inheriting properties */
+.child { color: initial; }    /* reset to the spec default, ignore parent */
+.child { color: unset; }      /* inherit if the property inherits,
+                                  otherwise initial */
+.child { all: unset; }        /* apply "unset" to every property at once */`}
         />
       </Section>
 
@@ -115,9 +150,95 @@ background, position, display
               answer: 0,
               explain: "color is one of the properties that inherits by default — children compute their color from the parent's computed value unless overridden.",
             },
+            {
+              prompt: "You set background-color: unset on a child element. What happens?",
+              options: [
+                "It copies the parent's background-color, because unset always means inherit",
+                "It resets to transparent (the initial value), because background-color doesn't naturally inherit",
+                "It throws a CSS error",
+                "Nothing changes until you also set color: unset",
+              ],
+              answer: 1,
+              explain: "unset falls back to initial for properties that don't inherit by default. background-color is one of them, so unset behaves exactly like initial (transparent) here.",
+            },
           ]}
         />
       </Section>
     </TopicPage>
+  );
+}
+
+// Properties chosen to contrast a naturally-inheriting property (color)
+// against one that isn't (background-color) — the whole point of unset.
+const KEYWORD_PROPERTIES = {
+  color: { cssProp: "color", inherits: true, own: "#0f172a", ownLabel: "slate-900" },
+  "background-color": { cssProp: "backgroundColor", inherits: false, own: "#e0f2fe", ownLabel: "sky-100" },
+};
+
+function KeywordsPlayground() {
+  const [property, setProperty] = useState("color");
+  const [keyword, setKeyword] = useState("normal");
+  const keywords = ["normal", "inherit", "initial", "unset"];
+  const info = KEYWORD_PROPERTIES[property];
+
+  const childStyle = {
+    [info.cssProp]: keyword === "normal" ? info.own : keyword,
+  };
+
+  const descriptions = {
+    normal: `The child has its own declared ${property}: ${info.ownLabel} — no keyword involved, inheritance never enters the picture.`,
+    inherit: info.inherits
+      ? `inherit forces the child to use the parent's computed ${property} — this matches what would happen anyway, since ${property} inherits by default.`
+      : `inherit forces the child to copy the parent's computed ${property}, even though ${property} does NOT inherit by default — inherit overrides that.`,
+    initial: `initial resets ${property} to the property's spec-defined default (${property === "color" ? "browser text color, typically black" : "transparent"}), ignoring the parent completely.`,
+    unset: info.inherits
+      ? `unset acts exactly like inherit here, because ${property} is a naturally-inheriting property.`
+      : `unset acts exactly like initial here (transparent), because ${property} does NOT naturally inherit.`,
+  };
+
+  return (
+    <DemoCard label={`${property}: ${keyword}`} caption={descriptions[keyword]}>
+      <div className="w-full space-y-3">
+        <div className="flex flex-wrap justify-center gap-2 text-xs">
+          <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1 dark:bg-slate-800">
+            <span className="pl-2 font-bold text-slate-400">property</span>
+            {Object.keys(KEYWORD_PROPERTIES).map((p) => (
+              <button
+                key={p}
+                onClick={() => setProperty(p)}
+                className={`rounded-full px-2 py-1 font-semibold transition ${property === p ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-white dark:text-slate-400 dark:hover:bg-slate-700"}`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap justify-center gap-2 text-xs">
+          {keywords.map((k) => (
+            <button
+              key={k}
+              onClick={() => setKeyword(k)}
+              className={`rounded-full px-3 py-1 font-semibold transition ${keyword === k ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-300"}`}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+        <div
+          className="rounded-lg border-2 border-dashed p-4 transition-all duration-300"
+          style={{ borderColor: "#4f46e5", color: "#4f46e5", backgroundColor: "#c7d2fe" }}
+        >
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-wide">
+            Parent — color: indigo-600, background-color: indigo-200
+          </p>
+          <div
+            className="rounded-md border border-slate-300 bg-white p-3 text-sm font-semibold transition-all duration-300 dark:border-slate-700"
+            style={childStyle}
+          >
+            Child element — {property}: {keyword}
+          </div>
+        </div>
+      </div>
+    </DemoCard>
   );
 }

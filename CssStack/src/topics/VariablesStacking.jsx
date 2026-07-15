@@ -52,6 +52,23 @@ export default function VariablesStacking() {
           unrelated reason silently creates a new stacking context and traps all its children's z-index values
           inside it.
         </p>
+        <p>
+          A plain <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">--x: 10px</code> custom
+          property has no declared type — the browser treats it as an opaque string, which is why you can't
+          animate it directly with a CSS transition (it can't interpolate between two arbitrary strings).{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">@property</code> fixes this by
+          registering a custom property with a real syntax (like <code>&lt;length&gt;</code> or{" "}
+          <code>&lt;color&gt;</code>), an initial value, and whether it inherits — once registered, the browser
+          knows how to smoothly interpolate it, so it can be transitioned or keyframe-animated exactly like a
+          native property such as <code>width</code>.
+        </p>
+        <Callout type="spec" title="@property: typed, animatable custom properties">
+          <code>{`@property --angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }`}</code> registers{" "}
+          <code>--angle</code> as a real angle value. From then on, <code>transition: --angle 0.3s</code> or a{" "}
+          <code>@keyframes</code> animation on it will interpolate frame-by-frame — something a plain{" "}
+          <code>var()</code>-based custom property can never do, since untyped custom properties are just inert
+          strings to the animation engine.
+        </Callout>
       </Section>
 
       <Section id="demo" kicker="Watch it happen" title="Live demo — one variable, many consumers">

@@ -84,6 +84,32 @@ export default function BoxModel() {
         </DemoCard>
       </Section>
 
+      <Section id="overflow" kicker="When content doesn't fit" title="overflow — visible, hidden, scroll, auto">
+        <BeginnerNote>
+          Picture that same picture frame, but the photo is bigger than the mat board cut for it. What happens to
+          the parts that stick out?{" "}
+          <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">overflow</code> is the setting that
+          answers that question — let it spill out, chop it off, or add a scrollbar so people can still see the
+          rest.
+        </BeginnerNote>
+        <ProLabel />
+        <p>
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">overflow</code>{" "}
+          controls what happens when a box's content is larger than the box itself.{" "}
+          <Hi tone="indigo">visible</Hi> (the default) lets content spill outside the box's border, painting over
+          whatever sits next to it. <Hi tone="rose">hidden</Hi> clips anything past the box's bounds — it's simply
+          gone, with no way for the user to scroll to it. <Hi tone="amber">scroll</Hi> always shows scrollbars, even
+          when the content actually fits, reserving the scrollbar gutter permanently. <Hi tone="emerald">auto</Hi>{" "}
+          is the pragmatic middle ground — the browser adds scrollbars only when they're actually needed.
+        </p>
+        <OverflowPlayground />
+        <Callout type="pitfall" title="overflow creates a new block formatting context">
+          Setting anything other than <code>visible</code> on <code>overflow</code> also establishes a new block
+          formatting context — that's why it's a common (if surprising) fix for containing floats or preventing
+          margin collapse between a parent and its children.
+        </Callout>
+      </Section>
+
       <Section id="code" kicker="Reference" title="box-sizing in practice">
         <CodeBlock
           title="box-model.css"
@@ -97,6 +123,12 @@ export default function BoxModel() {
   padding: 16px;
   border: 2px solid #6366f1;
   margin: 24px 0;        /* collapses with adjacent vertical margins */
+}
+
+/* overflow: what happens when content is bigger than its box */
+.panel {
+  height: 120px;
+  overflow: auto;         /* scrollbar only appears if content overflows */
 }`}
         />
       </Section>
@@ -122,9 +154,55 @@ export default function BoxModel() {
               answer: 2,
               explain: "Margin is always transparent space outside the border — background-color paints up to the border edge, never into the margin.",
             },
+            {
+              prompt: "Which overflow value shows a scrollbar only when the content actually overflows the box?",
+              options: ["visible", "hidden", "scroll", "auto"],
+              answer: 3,
+              explain: "overflow: auto adds scrollbars on demand. overflow: scroll always reserves scrollbar space, even when the content fits.",
+            },
           ]}
         />
       </Section>
     </TopicPage>
+  );
+}
+
+function OverflowPlayground() {
+  const [value, setValue] = useState("visible");
+  const values = ["visible", "hidden", "scroll", "auto"];
+  const descriptions = {
+    visible: "Default. Content spills outside the box's bounds — nothing is clipped, nothing scrolls.",
+    hidden: "Anything past the box's bounds is clipped and simply invisible — no scrollbar, no way to reach it.",
+    scroll: "The box always shows a scrollbar — even here, where the text barely overflows — reserving its space permanently.",
+    auto: "Scrollbars appear only when content actually overflows. The pragmatic, most commonly used default for scrollable panels.",
+  };
+
+  return (
+    <DemoCard label="overflow" caption={descriptions[value]}>
+      <div className="w-full space-y-3">
+        <div className="flex flex-wrap justify-center gap-2 text-xs">
+          {values.map((v) => (
+            <button
+              key={v}
+              onClick={() => setValue(v)}
+              className={`rounded-full px-3 py-1 font-bold transition ${
+                value === v ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-300"
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-center">
+          <div
+            className="h-28 w-52 rounded-lg border-2 border-dashed border-white/40 bg-gradient-to-br from-indigo-500 to-sky-500 p-3 text-xs leading-relaxed text-white shadow transition-all duration-300"
+            style={{ overflow: value }}
+          >
+            This box is only 112px tall, but this paragraph has way more text in it than that — enough to spill past
+            the bottom edge and prove the point about each overflow value.
+          </div>
+        </div>
+      </div>
+    </DemoCard>
   );
 }

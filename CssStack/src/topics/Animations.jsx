@@ -24,11 +24,24 @@ const wiggleStyle = `
   50% { transform: scale(1.25); opacity: 0.6; }
 }
 .pulse-demo { animation: pulse-demo 1.1s ease-in-out infinite; }
+
+@keyframes orbit-smooth {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(140px); }
+}
+.orbit-smooth { animation: orbit-smooth 1.6s ease-in-out infinite alternate; }
+
+@keyframes orbit-steps {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(140px); }
+}
+.orbit-steps { animation: orbit-steps 1.6s steps(6, end) infinite alternate; }
 `;
 
 export default function Animations() {
   const [transform, setTransform] = useState("translate");
   const [playing, setPlaying] = useState(true);
+  const [stepsPlaying, setStepsPlaying] = useState(true);
 
   const transformMap = {
     translate: "translateX(40px)",
@@ -107,10 +120,67 @@ export default function Animations() {
               <button onClick={() => setPlaying((p) => !p)} className="rounded-full bg-sky-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-sky-500">
                 {playing ? "Pause @keyframes" : "Play @keyframes"}
               </button>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">wiggle · bounce · pulse — three independent @keyframes rules</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                wiggle · bounce · pulse — three independent @keyframes rules, toggled via{" "}
+                <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">animation-play-state</code>
+              </p>
             </div>
           </div>
         </DemoCard>
+      </Section>
+
+      <Section id="steps" kicker="Timing functions" title="steps() vs. smooth easing — discrete motion">
+        <BeginnerNote>
+          Most easing curves (<code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">ease</code>,{" "}
+          <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">linear</code>) glide smoothly between
+          checkpoints. <code className="rounded bg-emerald-100 px-1 dark:bg-emerald-500/20">steps(6, end)</code>{" "}
+          instead "ticks" through 6 fixed positions with no motion in between — like a clock's second hand instead
+          of a sweeping hand. Watch the two dots below travel the exact same distance in the exact same time, one
+          smooth and one ticking.
+        </BeginnerNote>
+        <ProLabel />
+        <p>
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">steps(n, jumpterm)</code> divides
+          the animation's range into <Hi tone="indigo">n</Hi> equal jumps instead of interpolating continuously.{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">end</code> (the default) holds each
+          value until the <em>end</em> of its step interval, which is exactly the behavior a sprite-sheet animation
+          needs: show frame 1, then frame 2, then frame 3 — never a blend between two frames.{" "}
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">start</code> instead jumps
+          immediately at the beginning of each interval.
+        </p>
+        <DemoCard label="animation-play-state + steps()" caption="Left: ease-in-out (smooth interpolation). Right: steps(6, end) (6 discrete jumps) — same distance, same 1.6s duration.">
+          <div className="flex w-full flex-col items-center gap-4">
+            <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2">
+              <div className="flex flex-col items-center gap-2">
+                <div className="relative h-10 w-full max-w-[180px] rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className={`absolute top-1 left-1 h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 shadow-lg ${stepsPlaying ? "orbit-smooth" : ""}`}
+                    style={{ animationPlayState: stepsPlaying ? "running" : "paused" }}
+                  />
+                </div>
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">ease-in-out (smooth)</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="relative h-10 w-full max-w-[180px] rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className={`absolute top-1 left-1 h-8 w-8 rounded-full bg-gradient-to-br from-rose-400 to-amber-400 shadow-lg ${stepsPlaying ? "orbit-steps" : ""}`}
+                    style={{ animationPlayState: stepsPlaying ? "running" : "paused" }}
+                  />
+                </div>
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">steps(6, end) (ticking)</span>
+              </div>
+            </div>
+            <button onClick={() => setStepsPlaying((p) => !p)} className={`rounded-full px-3 py-1 text-xs font-bold transition ${stepsPlaying ? "bg-rose-600 text-white" : "bg-sky-600 text-white"}`}>
+              animation-play-state: {stepsPlaying ? "running (click to pause)" : "paused (click to run)"}
+            </button>
+          </div>
+        </DemoCard>
+        <Callout type="pitfall" title="steps() isn't 'choppy easing' — it's a different mental model">
+          A smooth easing function still visits every intermediate pixel on the way. <code>steps(n)</code>{" "}
+          skips straight from checkpoint to checkpoint with <em>zero</em> motion in between — there is no
+          in-between frame to see. That's precisely why it's the right (and only correct) tool for frame-by-frame
+          sprite animation, and the wrong tool whenever you want motion to look fluid.
+        </Callout>
       </Section>
 
       <Section id="code" kicker="Reference" title="The wiggle animation, in full">
@@ -154,6 +224,17 @@ export default function Animations() {
               options: ["animation-delay", "animation-fill-mode: forwards", "animation-timing-function", "@keyframes 100%"],
               answer: 1,
               explain: "Without fill-mode: forwards, the browser discards the animated styles once the animation completes and reverts to the element's pre-animation computed style.",
+            },
+            {
+              prompt: "How is animation: move 1.6s steps(6, end) infinite different from the same animation with a smooth easing function like ease-in-out?",
+              options: [
+                "They look identical",
+                "steps() jumps between 6 fixed positions with no motion in between, instead of continuously interpolating every intermediate value",
+                "steps() only works with opacity",
+                "steps() ignores the animation-duration",
+              ],
+              answer: 1,
+              explain: "A smooth timing function samples a continuous curve; steps(n) instead divides the range into n discrete jumps with no in-between frames — the look sprite-sheet animations rely on.",
             },
           ]}
         />
