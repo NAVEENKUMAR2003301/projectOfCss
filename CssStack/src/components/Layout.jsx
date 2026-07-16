@@ -198,12 +198,15 @@ export default function Layout() {
 
       <footer className="border-t border-slate-200 dark:border-slate-800">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-6 py-8 text-sm text-slate-500 dark:text-slate-400 sm:flex-row sm:justify-between">
-          <p>© {new Date().getFullYear()} CssStack Atlas. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} CssStack Atlas. All rights reserved. · Created by{" "}
+            <span className="font-semibold text-slate-600 dark:text-slate-300">Naveenkumar V</span>
+          </p>
           <div className="flex items-center gap-4">
-            <a href="mailto:hello@cssstackatlas.dev" className="transition hover:text-indigo-600 dark:hover:text-indigo-400">
+            <a href="mailto:livnaveen@gmail.com" className="transition hover:text-indigo-600 dark:hover:text-indigo-400">
               Contact
             </a>
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="transition hover:text-indigo-600 dark:hover:text-indigo-400">
+            <a href="https://github.com/NAVEENKUMAR2003301" target="_blank" rel="noreferrer" className="transition hover:text-indigo-600 dark:hover:text-indigo-400">
               GitHub
             </a>
           </div>
