@@ -25,7 +25,7 @@ export function Section({ id, kicker, title, children }) {
         )}
         <h2 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">{title}</h2>
       </div>
-      <div className="space-y-4 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">{children}</div>
+      <div className="space-y-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">{children}</div>
     </section>
   );
 }

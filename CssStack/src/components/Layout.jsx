@@ -1,7 +1,95 @@
-import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { categories } from "../data/topics";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { allTopics, categories } from "../data/topics";
 import ThemeToggle from "./ThemeToggle";
+
+function TopicSearch() {
+  const [query, setQuery] = useState("");
+  const [openResults, setOpenResults] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const wrapRef = useRef(null);
+  const navigate = useNavigate();
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return allTopics
+      .filter((t) => t.title.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q) || t.categoryTitle.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [query]);
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpenResults(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  function goTo(topic) {
+    if (!topic) return;
+    navigate(`/topic/${topic.id}`);
+    setQuery("");
+    setOpenResults(false);
+  }
+
+  function onKeyDown(e) {
+    if (!results.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) => (h + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => (h - 1 + results.length) % results.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      goTo(results[highlight]);
+    } else if (e.key === "Escape") {
+      setOpenResults(false);
+    }
+  }
+
+  return (
+    <div ref={wrapRef} className="relative hidden w-56 sm:block">
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpenResults(true);
+          setHighlight(0);
+        }}
+        onFocus={() => setOpenResults(true)}
+        onKeyDown={onKeyDown}
+        placeholder="Search methods…"
+        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm outline-none transition duration-500 ease-out placeholder:text-slate-400 focus:border-indigo-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:border-indigo-500"
+      />
+      {openResults && results.length > 0 && (
+        <ul className="animate-fade-in absolute top-full left-0 z-40 mt-2 w-72 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          {results.map((t, i) => (
+            <li key={t.id}>
+              <button
+                onClick={() => goTo(t)}
+                onMouseEnter={() => setHighlight(i)}
+                className={`flex w-full flex-col items-start px-3 py-2 text-left transition ${
+                  i === highlight ? "bg-indigo-50 dark:bg-indigo-500/10" : ""
+                }`}
+              >
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t.title}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t.categoryTitle} · {t.tag}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {openResults && query.trim() && results.length === 0 && (
+        <div className="animate-fade-in absolute top-full left-0 z-40 mt-2 w-72 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-400 shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500">
+          No methods match "{query}"
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Sidebar({ onNavigate }) {
   const location = useLocation();
@@ -51,11 +139,11 @@ export default function Layout() {
   }, [open]);
 
   return (
-    <div className="min-h-screen bg-slate-50 transition-colors duration-300 dark:bg-slate-950">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/80">
+    <div className="min-h-screen bg-slate-50 transition-colors duration-500 ease-out dark:bg-slate-950">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur transition-colors duration-500 ease-out dark:border-slate-800 dark:bg-slate-950/80">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
           <Link to="/" className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500 text-sm font-black text-white shadow-md transition-transform duration-300 hover:rotate-6">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500 text-sm font-black text-white shadow-md transition-transform duration-500 ease-out hover:rotate-6">
               CSS
             </span>
             <span className="text-lg font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
@@ -64,6 +152,7 @@ export default function Layout() {
           </Link>
 
           <div className="flex items-center gap-2">
+            <TopicSearch />
             <ThemeToggle />
             <button
               onClick={() => setOpen((o) => !o)}
@@ -106,6 +195,20 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      <footer className="border-t border-slate-200 dark:border-slate-800">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-6 py-8 text-sm text-slate-500 dark:text-slate-400 sm:flex-row sm:justify-between">
+          <p>© {new Date().getFullYear()} CssStack Atlas. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <a href="mailto:hello@cssstackatlas.dev" className="transition hover:text-indigo-600 dark:hover:text-indigo-400">
+              Contact
+            </a>
+            <a href="https://github.com" target="_blank" rel="noreferrer" className="transition hover:text-indigo-600 dark:hover:text-indigo-400">
+              GitHub
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

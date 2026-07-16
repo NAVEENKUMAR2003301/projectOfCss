@@ -36,7 +36,85 @@ const wiggleStyle = `
   100% { transform: translateX(140px); }
 }
 .orbit-steps { animation: orbit-steps 1.6s steps(6, end) infinite alternate; }
+
+@keyframes gallery-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.gallery-fade-in { animation: gallery-fade-in 0.6s ease-out both; }
+
+@keyframes gallery-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.gallery-slide-up { animation: gallery-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes gallery-flip {
+  from { transform: rotateY(180deg); opacity: 0; }
+  to { transform: rotateY(0deg); opacity: 1; }
+}
+.gallery-flip { animation: gallery-flip 0.7s ease-out both; }
+
+@keyframes gallery-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+.gallery-shake { animation: gallery-shake 0.6s ease-in-out both; }
+
+@keyframes gallery-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.6); }
+  50% { box-shadow: 0 0 0 12px rgba(79, 70, 229, 0); }
+}
+.gallery-glow { animation: gallery-glow 1.4s ease-out infinite; }
+
+@keyframes gallery-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.gallery-spin { animation: gallery-spin 1.1s linear infinite; }
 `;
+
+const GALLERY_EXAMPLES = [
+  { key: "gallery-fade-in", label: "fade-in", desc: "opacity 0 → 1", swatch: "from-indigo-500 to-sky-500" },
+  { key: "gallery-slide-up", label: "slide-up", desc: "translateY(24px) → 0, eased", swatch: "from-emerald-400 to-teal-500" },
+  { key: "gallery-flip", label: "flip", desc: "rotateY(180deg) → 0deg", swatch: "from-rose-400 to-amber-400" },
+  { key: "gallery-shake", label: "shake", desc: "alternating translateX", swatch: "from-amber-400 to-rose-500" },
+  { key: "gallery-glow", label: "glow (infinite)", desc: "expanding box-shadow ring", swatch: "from-indigo-500 to-purple-500" },
+  { key: "gallery-spin", label: "spin (infinite)", desc: "linear rotate, no easing", swatch: "from-sky-400 to-indigo-500" },
+];
+
+function AnimationGallery() {
+  const [replayCount, setReplayCount] = useState(0);
+
+  return (
+    <div className="w-full">
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-xs text-slate-400 dark:text-slate-500">Six common patterns — click "Replay" to re-trigger the one-shot ones.</p>
+        <button
+          onClick={() => setReplayCount((c) => c + 1)}
+          className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-indigo-500"
+        >
+          Replay
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {GALLERY_EXAMPLES.map((ex) => (
+          <div key={ex.key} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div
+              key={`${ex.key}-${replayCount}`}
+              className={`h-10 w-10 rounded-lg bg-gradient-to-br shadow-lg ${ex.key} ${ex.swatch}`}
+            />
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{ex.label}</span>
+            <span className="text-center text-[11px] text-slate-400 dark:text-slate-500">{ex.desc}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Animations() {
   const [transform, setTransform] = useState("translate");
@@ -181,6 +259,17 @@ export default function Animations() {
           in-between frame to see. That's precisely why it's the right (and only correct) tool for frame-by-frame
           sprite animation, and the wrong tool whenever you want motion to look fluid.
         </Callout>
+      </Section>
+
+      <Section id="gallery" kicker="More examples" title="A gallery of common animation patterns">
+        <BeginnerNote>
+          These are the animation "moves" you'll reach for constantly: fading things in, sliding them up as they
+          appear, flipping a card, shaking an input on a validation error, pulsing a glow to draw the eye, and
+          spinning a loading icon.
+        </BeginnerNote>
+        <DemoCard label="Gallery" caption="fade-in and slide-up commonly run once on mount; glow and spin loop forever for persistent attention-grabbers.">
+          <AnimationGallery />
+        </DemoCard>
       </Section>
 
       <Section id="code" kicker="Reference" title="The wiggle animation, in full">
